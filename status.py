@@ -112,7 +112,7 @@ def format_status(work_plan):
     return section_separator.join(filter(lambda s: s != None, section_outputs))
 
 def status(index_loc):
-    assert index_manager.index_exists(index_loc)
+    assert index_manager.index_exists(index_loc), "Index doesn't exist."
     return diff_work(
         index_manager.last_index_details(index_loc),
         plan_work(index_loc, IMPORTER_REGISTRY)
