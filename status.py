@@ -71,7 +71,7 @@ def diff_work(last_index_details, new_plan):
         suffixes=('_old', '_new'),
         indicator=True
     )
-    return {
+    rollups = {
         'new_files': df.loc[df['_merge'] == 'right_only'],
         'deleted_files': df.loc[df['_merge'] == 'left_only'],
         'updated_files': df.loc[(df['_merge'] == 'both') & (
@@ -80,8 +80,13 @@ def diff_work(last_index_details, new_plan):
             df['strategy_new'] != df['strategy_old'])],
         'newer_strategy': df.loc[(df['_merge'] == 'both') & (
             df['strategy_version_new'] > df['strategy_version_old']) & (
+            df['strategy_new'] == df['strategy_old'])],
+        'unchanged': df.loc[(df['_merge'] == 'both') & (
+            df['strategy_version_new'] == df['strategy_version_old']) & (
             df['strategy_new'] == df['strategy_old'])]
     }
+    assert sum([value.shape[0] for key,value in rollups.items()]) == df.shape[0]
+    return rollups
 
 def format_status(work_plan):
     """
@@ -93,6 +98,7 @@ def format_status(work_plan):
         ("Updated", work_plan['updated_files']),
         ("New importer available", work_plan['diff_strategy']),
         ("Updated importer available", work_plan['newer_strategy']),
+        # ("Unchanged", work_plan['unchanged']), # debug only
     ]
     section_separator = '\n'
     def make_section(header, data):

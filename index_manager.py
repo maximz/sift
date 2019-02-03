@@ -28,7 +28,7 @@ def last_index_details(index_loc, index_store_filename=DEFAULT_INDEX_STORE_FILEN
     """
     load last index management data
     """
-    return pd.read_csv(get_index_metadata_path(index_loc, index_store_filename))
+    return pd.read_csv(get_index_metadata_path(index_loc, index_store_filename), index_col='fname')
 
 def update_file_data():
     """
