@@ -88,21 +88,21 @@ def format_status(work_plan):
         return '\n'.join(diff_plan.index.values)
 
     return """
-    New:
-    {new_files}
+New:
+{new_files}
 
-    Deleted:
-    {deleted_files}
+Deleted:
+{deleted_files}
 
-    Updated:
-    {updated_files}
+Updated:
+{updated_files}
 
-    New importer available:
-    {diff_strategy}
+New importer available:
+{diff_strategy}
 
-    Updated importer available:
-    {newer_strategy}
-    """.format(
+Updated importer available:
+{newer_strategy}
+""".format(
         new_files=get_file_names(work_plan.new_files),
         deleted_files=get_file_names(work_plan.deleted_files),
         updated_files=get_file_names(work_plan.updated_files),
@@ -110,7 +110,8 @@ def format_status(work_plan):
         newer_strategy=get_file_names(work_plan.newer_strategy),
     )
 
-def status(index_loc='.'):
+def status(index_loc):
+    assert index_manager.index_exists(index_loc)
     return diff_work(
         index_manager.last_index_details(index_loc),
         plan_work(index_loc, IMPORTER_REGISTRY)

@@ -10,7 +10,7 @@ class Importer(object):
         with open(full_path, 'r') as f:
             return f.read()
 
-    def execute(self, full_path):
+    def run(self, full_path):
         """
         Returns a Document ready for indexing.
         """
