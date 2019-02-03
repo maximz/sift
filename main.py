@@ -7,7 +7,7 @@ def main():
     group.add_argument('--init', action='store_true', help='Init index')
     group.add_argument('--status', action='store_true', help='Status of index')
     group.add_argument('--update', action='store_true', help='Update index')
-    group.add_argument('query', metavar='term', type=str, nargs='+', help='Search query word')
+    # group.add_argument('query', metavar='term', type=str, nargs='+', help='Search query word')
     args = parser.parse_args()
 
     if args.init:

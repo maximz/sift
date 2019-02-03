@@ -38,9 +38,12 @@ def plan_work(index_loc, strategies):
         - importer strategy version
     """
     def make_plan_per_extension(extension, strategy):
+        files = file_list(index_loc, extension)
+        if len(files) == 0:
+            return None
         df = pd.DataFrame.from_records(
-            file_list(index_loc, extension),
-            index='fname'
+            files,
+            index='fname' # requires files to be non-empty
         )
         df['strategy'] = strategy.__name__
         df['strategy_version'] = strategy.version
@@ -84,31 +87,29 @@ def format_status(work_plan):
     """
     Pretty-print a plan to update last index.
     """
-    def get_file_names(diff_plan):
-        return '\n'.join(diff_plan.index.values)
+    headers_and_data = [
+        ("New", work_plan['new_files']),
+        ("Deleted", work_plan['deleted_files']),
+        ("Updated", work_plan['updated_files']),
+        ("New importer available", work_plan['diff_strategy']),
+        ("Updated importer available", work_plan['newer_strategy']),
+    ]
+    section_separator = '\n'
+    def make_section(header, data):
+        def get_file_names(diff_plan):
+            return '\n'.join(diff_plan.index.values)
 
-    return """
-New:
-{new_files}
+        if len(data) == 0:
+            return None
 
-Deleted:
-{deleted_files}
+        return "{header}:\n{filenames}".format(
+            header=header,
+            filenames=get_file_names(data)
+        )
 
-Updated:
-{updated_files}
-
-New importer available:
-{diff_strategy}
-
-Updated importer available:
-{newer_strategy}
-""".format(
-        new_files=get_file_names(work_plan.new_files),
-        deleted_files=get_file_names(work_plan.deleted_files),
-        updated_files=get_file_names(work_plan.updated_files),
-        diff_strategy=get_file_names(work_plan.diff_strategy),
-        newer_strategy=get_file_names(work_plan.newer_strategy),
-    )
+    section_outputs = [make_section(header, data)
+                       for (header, data) in headers_and_data]
+    return section_separator.join(filter(lambda s: s != None, section_outputs))
 
 def status(index_loc):
     assert index_manager.index_exists(index_loc)

@@ -13,16 +13,16 @@ DEFAULT_INDEX_STORE_FILENAME = '.searchindex.csv'
 def get_index_metadata_path(index_loc, index_store_filename):
     return Path(index_loc).joinpath(index_store_filename)
 
-
 def index_exists(index_loc, index_store_filename=DEFAULT_INDEX_STORE_FILENAME):
     return get_index_metadata_path(index_loc, index_store_filename).exists()
 
+def make_empty_index():
+    return pd.DataFrame(columns=['fname', 'last_mod', 'strategy', 'strategy_version']).set_index('fname')
 
 def create_index(index_loc, index_store_filename=DEFAULT_INDEX_STORE_FILENAME):
     assert not index_exists(
         index_loc, index_store_filename), 'Index already exists.'
-    get_index_metadata_path(
-        index_loc, index_store_filename).touch(exist_ok=False)
+    save_index_details(make_empty_index(), index_loc, index_store_filename)
 
 def last_index_details(index_loc, index_store_filename=DEFAULT_INDEX_STORE_FILENAME):
     """
