@@ -1,4 +1,4 @@
-import index_manager
+from . import index_manager
 import pandas as pd
 
 def update(index_loc, work_plan, delete=False):

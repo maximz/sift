@@ -1,5 +1,5 @@
 import argparse
-import status, index_manager, update
+from . import status, index_manager, update
 
 def main():
     parser = argparse.ArgumentParser(prog='searchtool', description="Index a file tree and search it.")
