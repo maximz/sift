@@ -1,7 +1,11 @@
 import pandas as pd
-import index_manager
+from . import index_manager
 from pathlib import Path
-from importers.registry import IMPORTER_REGISTRY
+from .importers.registry import IMPORTER_REGISTRY
+
+"""
+These methods are responsible for checking status of current index and formulating work plan to update current index with changed files.
+"""
 
 def file_list(base_path, extension):
     """
@@ -25,7 +29,7 @@ def file_list(base_path, extension):
         )
     ))
 
-def plan_work(index_loc, strategies):
+def make_plan_from_scratch(index_loc, strategies):
     """
     Plan how to index this directory from scratch.
     Arguments:
@@ -121,5 +125,5 @@ def status(index_loc):
     assert index_manager.index_exists(index_loc), "Index doesn't exist."
     return diff_work(
         index_manager.last_index_details(index_loc),
-        plan_work(index_loc, IMPORTER_REGISTRY)
+        make_plan_from_scratch(index_loc, IMPORTER_REGISTRY)
     )
