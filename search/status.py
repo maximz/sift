@@ -86,6 +86,7 @@ def diff_work_between_plans(last_index_details, new_plan):
             df['strategy_version_new'] > df['strategy_version_old']) & (
             df['strategy_new'] == df['strategy_old'])],
         'unchanged': df.loc[(df['_merge'] == 'both') & (
+            df['last_mod_new'] == df['last_mod_old']) & (
             df['strategy_version_new'] == df['strategy_version_old']) & (
             df['strategy_new'] == df['strategy_old'])]
     }
