@@ -54,10 +54,10 @@ def make_plan_from_scratch(index_loc, strategies):
         return df
     return pd.concat([make_plan_per_extension(extension, strategy) for extension, strategy in strategies.items()])
 
-def diff_work(last_index_details, new_plan):
+def diff_work_between_plans(last_index_details, new_plan):
     """
     Compares new plan to index this directory from scratch against the last plan that was executed.
-    Returns:
+    Returns list of changes that, if applied to last_index_details, would transform it into new_plan:
         - new files
         - removed files
         - files with newer date modified
@@ -123,7 +123,7 @@ def format_status(work_plan):
 
 def status(index_loc):
     assert index_manager.index_exists(index_loc), "Index doesn't exist."
-    return diff_work(
+    return diff_work_between_plans(
         index_manager.last_index_details(index_loc),
         make_plan_from_scratch(index_loc, IMPORTER_REGISTRY)
     )
