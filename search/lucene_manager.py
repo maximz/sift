@@ -77,6 +77,11 @@ class LuceneManager(object):
 
 
     def search(self, terms, n_hits=50):
+        """
+        Run search query.
+        """
+        # TODO: support date range queries
+
         # build query
         parser = MultiFieldQueryParser(['fullpath', 'filename', 'body'], self.analyzer)
         #parser.setDefaultOperator(QueryParser.Operator.AND) # defaults to OR unless terms have modifier

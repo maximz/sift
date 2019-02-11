@@ -16,6 +16,10 @@ def manager(datadir):
 def document(manager):
     return manager.make_document('test/test2/test3.txt', 'test3.txt', time.time() - 10000, 'Sample contents of a document')
 
+@fixture
+def document_updated(manager):
+    return manager.make_document('test/test2/test3.txt', 'test3.txt', time.time() + 10000, 'This is completely different')
+
 @fixture(autouse=True) # will run automatically before each test
 def reset(manager):
     manager.delete_all()
@@ -43,23 +47,55 @@ def test_reset_fixture(manager):
     """
     assert manager.num_docs() == 0
 
-def test_insert_query(manager, document):
+def test_insert_query_by_filename(manager, document):
     """
-    Insert a document, then confirm query returns the right values.
+    Insert a document, then query for the filename, and confirm the document matches with the right values returned.
     """
     manager.insert(document)
     manager.commit()
     assert manager.num_docs() == 1
     results = list(manager.search(document['filename']))
-    print('\n'.join([format_document(d) for d in manager.get_all_docs()]))
-    print(document['filename'])
+    # print('\n'.join([format_document(d) for d in manager.get_all_docs()]))
     assert len(results) == 1
     assert_document_equals(results[0], document)
 
+def test_insert_query_by_body(manager, document):
+    """
+    Insert a document, then query for the body, and confirm the document matches with the right values returned.
+    """
+    manager.insert(document)
+    manager.commit()
+    assert manager.num_docs() == 1
+    query_text = ' '.join(document['body'].split(' ')[:2])
+    results = list(manager.search(query_text))
+    assert len(results) == 1
+    assert_document_equals(results[0], document)
 
-# insert and then query by body.
-# update. then query. make sure updated.
-# insert. delete. then not exists.
+def test_update_document(manager, document, document_updated):
+    """
+    Insert a document, then update it, and confirm it was updated in index.
+    """
+    manager.insert(document)
+    manager.commit()
+    manager.update(document['key'], document_updated)
+    manager.commit()
+    assert document['key'] == document_updated['key'], 'sanity check'
+    assert manager.exists(document['key'])
+    assert manager.num_docs() == 1
+    results = list(manager.search(document_updated['body']))
+    assert len(results) == 1
+    assert_document_equals(results[0], document_updated)
+
+def test_insert_delete_notexist(manager, document):
+    """
+    Insert a document, then delete, then confirm it does not exist.
+    """
+    manager.insert(document)
+    manager.commit()
+    manager.delete(document['key'])
+    manager.commit()
+    assert not manager.exists(document['key'])
+    assert manager.num_docs() == 0
 
 def test_analyzer(manager):
     """
