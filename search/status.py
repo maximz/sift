@@ -1,5 +1,5 @@
 import pandas as pd
-from . import index_manager
+from . import metadata_manager
 from pathlib import Path
 from .importers.registry import IMPORTER_REGISTRY
 
@@ -50,6 +50,7 @@ def make_plan_from_scratch(index_loc, strategies):
                 'last_mod': pd.Series(dtype='float'),
                 'strategy': pd.Series(dtype='str'),
                 'strategy_version': pd.Series(dtype='float'),
+                'extension': pd.Series(dtype='str'),
             }).set_index('fname')
         df = pd.DataFrame.from_records(
             files,
@@ -57,6 +58,8 @@ def make_plan_from_scratch(index_loc, strategies):
         )
         df['strategy'] = strategy.__name__
         df['strategy_version'] = strategy.version
+        # specifying extension explicitly because of cases like .tar.gz which would be hard to extract from fname
+        df['extension'] = extension
         return df
     return pd.concat([make_plan_per_extension(extension, strategy) for extension, strategy in strategies.items()])
 
@@ -129,8 +132,8 @@ def format_status(work_plan):
     return section_separator.join(filter(lambda s: s != None, section_outputs))
 
 def status(index_loc):
-    assert index_manager.index_exists(index_loc), "Index doesn't exist."
+    assert metadata_manager.index_exists(index_loc), "Index doesn't exist."
     return diff_work_between_plans(
-        index_manager.last_index_details(index_loc),
+        metadata_manager.last_index_details(index_loc),
         make_plan_from_scratch(index_loc, IMPORTER_REGISTRY)
     )

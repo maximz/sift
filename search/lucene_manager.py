@@ -9,13 +9,14 @@ from org.apache.lucene.store import SimpleFSDirectory
 from org.apache.lucene.search import IndexSearcher, TermQuery, BooleanQuery, BooleanClause, MatchAllDocsQuery
 from org.apache.lucene.queryparser.classic import QueryParser, MultiFieldQueryParser
 from org.apache.lucene.analysis.tokenattributes import CharTermAttribute
-
+from pathlib import Path
 
 class LuceneManager(object):
 
-    def __init__(self, index_path):
+    def __init__(self, index_root_loc, index_subdir_name='.searchindex'):
         if lucene.getVMEnv() is None:
             lucene.initVM(vmargs=['-Djava.awt.headless=true'])
+        index_path = str(Path(index_root_loc).joinpath('%s/' % index_subdir_name))
         if not os.path.exists(index_path):
             os.mkdir(index_path)
         store = SimpleFSDirectory(Paths.get(index_path))
@@ -31,9 +32,11 @@ class LuceneManager(object):
 
     def insert(self, document):
         self.writer.addDocument(document)
+        return document['key']
 
     def delete(self, key):
         self.writer.deleteDocuments(Term('key', key))
+        return key
 
     def delete_all(self):
         self.writer.deleteAll()
@@ -44,6 +47,7 @@ class LuceneManager(object):
     def update(self, key, document):
         # atomic delete and add
         self.writer.updateDocument(Term('key', key), document)
+        return key
 
     def exists(self, key):
         boolean_query = BooleanQuery.Builder()

@@ -1,5 +1,5 @@
 import argparse
-from . import status, index_manager, update
+from . import status, metadata_manager, update
 
 def main():
     parser = argparse.ArgumentParser(prog='searchtool', description="Index a file tree and search it.")
@@ -30,7 +30,7 @@ def main():
     args.func(args)
 
 def init_index(args):
-    index_manager.create_index(args.path)
+    metadata_manager.create_index(args.path)
     print("Index created")
 
 def get_status(args):
@@ -39,15 +39,11 @@ def get_status(args):
 def update_index(args):
     work_plan = status.status(args.path)
     formatted_status = status.format_status(work_plan)
-    update.update(args.path, work_plan, delete=args.delete_missing)
     if formatted_status == '':
         print('No changes.')
         return
     print(formatted_status)
-    if args.delete_missing:
-        print('Missing objects removed from index.')
-    else:
-        print('Missing objects NOT removed from index.')
+    update.update(args.path, work_plan, delete=args.delete_missing, verbose=True)
 
 def run_query(args):
     print('query: %s' % ' '.join(args.terms))

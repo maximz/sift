@@ -5,8 +5,7 @@ import time
 @fixture
 def manager(datadir):
     # set up
-    index_path = str(datadir.join('.searchindex/'))
-    mgr = LuceneManager(index_path)
+    mgr = LuceneManager(index_root_loc=str(datadir))
     # use in tests
     yield mgr
     # clean up
