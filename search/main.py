@@ -44,9 +44,8 @@ def update_index(args):
         print('No changes.')
         return
     print(formatted_status)
-    index_manager = lucene_manager.LuceneManager(index_loc) # TODO: wrap in a with
-    update.update(index_loc, index_manager, work_plan, delete=args.delete_missing, verbose=True)
-    index_manager.close()
+    with lucene_manager.LuceneManager(index_loc) as index_manager:
+        update.update(index_loc, index_manager, work_plan, delete=args.delete_missing, verbose=True)
 
 def run_query(args):
     print('query: %s' % ' '.join(args.terms))

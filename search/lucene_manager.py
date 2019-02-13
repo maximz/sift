@@ -14,9 +14,16 @@ from pathlib import Path
 class LuceneManager(object):
 
     def __init__(self, index_root_loc, index_subdir_name='.searchindex'):
+        self.index_root_loc = index_root_loc
+        self.index_subdir_name = index_subdir_name
+
+    def __enter__(self):
+        """
+        Used by "with" statement. Like an "open" / "init" method.
+        """
         if lucene.getVMEnv() is None:
             lucene.initVM(vmargs=['-Djava.awt.headless=true'])
-        index_path = str(Path(index_root_loc).joinpath('%s/' % index_subdir_name))
+        index_path = str(Path(self.index_root_loc).joinpath('%s/' % self.index_subdir_name))
         if not os.path.exists(index_path):
             os.mkdir(index_path)
         store = SimpleFSDirectory(Paths.get(index_path))
@@ -29,6 +36,8 @@ class LuceneManager(object):
         self.reader = DirectoryReader.open(self.writer)
         # IndexSearcher
         self.searcher = IndexSearcher(self.reader)
+
+        return self
 
     def insert(self, document):
         self.writer.addDocument(document)
@@ -98,7 +107,11 @@ class LuceneManager(object):
         return [self.process_search_result(result) for result in self.searcher.search(MatchAllDocsQuery(), n_hits).scoreDocs]
 
 
-    def close(self):
+    def __exit__(self, type, value, traceback):
+        """
+        Used by the "with" statement. Handles close.
+        TODO: error handling
+        """
         self.writer.close()
         self.reader.close()
 

@@ -4,12 +4,8 @@ import time
 
 @fixture
 def manager(datadir):
-    # set up
-    mgr = LuceneManager(index_root_loc=str(datadir))
-    # use in tests
-    yield mgr
-    # clean up
-    mgr.close()
+    with LuceneManager(index_root_loc=str(datadir)) as mgr:
+        yield mgr
 
 @fixture
 def document(manager):
