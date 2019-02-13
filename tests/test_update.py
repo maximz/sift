@@ -9,6 +9,10 @@ def indexdir(tmpdir):
     search.metadata_manager.create_index(str(tmpdir))
     return str(tmpdir)
 
+@fixture
+def mock_index_manager(mocker):
+    # mock out lucene manager so we don't run on empty documents
+    return mocker.patch('search.lucene_manager.LuceneManager',  autospec=True)
 
 @fixture
 def diff_plan():
@@ -25,11 +29,16 @@ def diff_plan():
 def get_filenames(diff_plan, keys):
     return pd.concat([diff_plan[key] for key in keys]).index.unique()
 
-def extract_filename_from_call(call):
+def extract_from_call(call, arg_index):
     # call objects are (args, kwargs) tuples
     args, kwargs = call
-    file_path = args[2]
-    return file_path
+    return args[arg_index]
+
+def extract_filename_from_perform_single_file_call(call):
+    return extract_from_call(call, 2)
+
+def extract_filename_from_index_call(call):
+    return extract_from_call(call, 0)
 
 def assert_lists_equal(l1, l2):
     # https://stackoverflow.com/a/12813909/130164
@@ -38,13 +47,12 @@ def assert_lists_equal(l1, l2):
 def assert_lists_have_no_shared_elements(l1, l2):
     assert set(l1).isdisjoint(set(l2))
 
-def test_strategy_run_calls(indexdir, mocker, diff_plan):
+
+def test_strategy_run_calls(indexdir, mock_index_manager, mocker, diff_plan):
     """
     Diff work synthetic classifications produce expected strategy run calls on all diff'd files, except unchanged and deleted.
     """
     mocker.patch.object(search.update, 'perform_single_file')
-    # also mock out lucene manager so we don't run on empty documents
-    mocker.patch('search.lucene_manager.LuceneManager')
 
     # we expect strategy run() on these filenames
     keys_expected = get_filenames(diff_plan, ['new_files', 'newer_strategy', 'diff_strategy', 'updated_files'])
@@ -56,19 +64,21 @@ def test_strategy_run_calls(indexdir, mocker, diff_plan):
     for k in keys_incorrect:
         assert k not in keys_expected
 
-    search.update.update(indexdir, diff_plan)
-    filepaths = [extract_filename_from_call(c) for c in search.update.perform_single_file.call_args_list]
+    search.update.update(indexdir, mock_index_manager, diff_plan)
+    filepaths = [extract_filename_from_perform_single_file_call(c) for c in search.update.perform_single_file.call_args_list]
     assert_lists_equal(filepaths, keys_expected)
 
-def test_index_manager_calls_no_delete(indexdir, mocker, diff_plan):
+
+def test_index_manager_calls_no_delete(indexdir, mock_index_manager, mocker, diff_plan):
     """
     Diff work synthetic classifications produce expected index manager calls on all diff'd files, except unchanged,
     and only on deleted if specified.
     """
     # mock file performer so we don't make real documents
+    # instead return just the key so we can track where this key goes
     mocker.patch.object(search.update, 'perform_single_file')
-    # mock lucene manager so we can measure
-    mocker.patch('search.lucene_manager.LuceneManager')
+    search.update.perform_single_file.side_effect = lambda strategies, extension, file_path: file_path
+    # we also mocked lucene manager so we can measure -- mock_index_manager
 
     # we expect insert() on these filenames
     insert_expected = get_filenames(diff_plan, ['new_files'])
@@ -85,15 +95,16 @@ def test_index_manager_calls_no_delete(indexdir, mocker, diff_plan):
     assert_lists_have_no_shared_elements(update_expected, no_action_expected)
 
     # run
-    search.update.update(indexdir, diff_plan, delete=False)
+    search.update.update(indexdir, mock_index_manager, diff_plan, delete=False, verbose=True)
 
-    filepaths_insert = [extract_filename_from_call(c) for c in search.lucene_manager.LuceneManager.insert.call_args_list]
+    print(mock_index_manager.insert.call_args_list)
+    filepaths_insert = [extract_filename_from_index_call(c) for c in mock_index_manager.insert.call_args_list]
     assert_lists_equal(filepaths_insert, insert_expected)
 
-    filepaths_update = [extract_filename_from_call(c) for c in search.lucene_manager.LuceneManager.update.call_args_list]
+    filepaths_update = [extract_filename_from_index_call(c) for c in mock_index_manager.update.call_args_list]
     assert_lists_equal(filepaths_update, update_expected)
 
-    search.lucene_manager.LuceneManager.delete.assert_not_called()
+    mock_index_manager.delete.assert_not_called()
 
 # TODO: exact same with delete -- parametrize?
 

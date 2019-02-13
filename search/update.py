@@ -1,13 +1,12 @@
-from . import metadata_manager, lucene_manager
+from . import metadata_manager
 import pandas as pd
 from .importers.registry import IMPORTER_REGISTRY
 
-def update(index_loc, work_plan, delete=False, strategies=IMPORTER_REGISTRY, verbose=False):
+def update(index_loc, index_manager, work_plan, delete=False, strategies=IMPORTER_REGISTRY, verbose=False):
     """
     Execute a work plan from .status.status() to update index.
     """
     assert metadata_manager.index_exists(index_loc), "Index doesn't exist."
-    index_manager = lucene_manager.LuceneManager(index_loc)
 
     # execute new_files, updated_files, new importer, updated importer, and maybe deletions
     if delete:
@@ -31,7 +30,6 @@ def update(index_loc, work_plan, delete=False, strategies=IMPORTER_REGISTRY, ver
 
     # commit changes
     index_manager.commit()
-    index_manager.close()
 
     # update our index metadata
     new_index_details = summarize_new_index_status(work_plan, delete)

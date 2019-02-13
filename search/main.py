@@ -1,5 +1,5 @@
 import argparse
-from . import status, metadata_manager, update
+from . import status, metadata_manager, update, lucene_manager
 
 def main():
     parser = argparse.ArgumentParser(prog='searchtool', description="Index a file tree and search it.")
@@ -37,13 +37,16 @@ def get_status(args):
     print(status.format_status(status.status(args.path)))
 
 def update_index(args):
-    work_plan = status.status(args.path)
+    index_loc = args.path
+    work_plan = status.status(index_loc)
     formatted_status = status.format_status(work_plan)
     if formatted_status == '':
         print('No changes.')
         return
     print(formatted_status)
-    update.update(args.path, work_plan, delete=args.delete_missing, verbose=True)
+    index_manager = lucene_manager.LuceneManager(index_loc) # TODO: wrap in a with
+    update.update(index_loc, index_manager, work_plan, delete=args.delete_missing, verbose=True)
+    index_manager.close()
 
 def run_query(args):
     print('query: %s' % ' '.join(args.terms))
