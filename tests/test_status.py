@@ -387,5 +387,91 @@ def test_diff_work_updated_files(mock_index):
     assert empty_diffplan(diff_work['newer_strategy'])
     assert empty_diffplan(diff_work['unchanged'])
 
+###########
 
-# TODO: test diff strategy, newer strategy
+def expected_diff_strategy_df(common_time):
+    return pd.DataFrame({
+        'fname': ['diff_strategy.txt'],
+        'last_mod_old': [common_time],
+        'last_mod_new': [common_time],
+        'strategy_old': ['UnspecializedImporter'],
+        'strategy_new': ['SpecializedImporter'],
+        'strategy_version_old': [2.0],
+        'strategy_version_new': [3.0], # this should not interfere!
+        'extension_old': ['txt'],
+        'extension_new': ['txt'],
+        '_merge': pd.Series(
+            ['both'],
+            dtype=pd.api.types.CategoricalDtype(
+                categories=['left_only', 'right_only', 'both'], ordered=False)
+        )
+    }).set_index('fname')[diff_plan_expected_column_order]
+
+
+def test_diff_work_diff_strategy(mock_index):
+    """
+    Confirm diff_work_between_plans produces proper classifications on synthetic plans,
+    in this case with a brand new specialized strategy replacing an older strategy for a specific extension.
+    """
+    common_time = time.time()
+    old_index = mock_index(['diff_strategy.txt'], [common_time], [
+                           'txt'], ['UnspecializedImporter'], [2.0])
+    new_index = mock_index(['diff_strategy.txt'], [common_time], [
+                           'txt'], ['SpecializedImporter'], [3.0])
+
+    diff_work = search.status.diff_work_between_plans(old_index, new_index)
+
+    assert_frame_equal(
+        diff_work['diff_strategy'],
+        expected_diff_strategy_df(common_time)
+    )
+
+    assert empty_diffplan(diff_work['new_files'])
+    assert empty_diffplan(diff_work['deleted_files'])
+    assert empty_diffplan(diff_work['updated_files'])
+    assert empty_diffplan(diff_work['newer_strategy'])
+    assert empty_diffplan(diff_work['unchanged'])
+
+###########
+
+def expected_newer_strategy_df(common_time):
+    return pd.DataFrame({
+        'fname': ['newer_strategy.txt'],
+        'last_mod_old': [common_time],
+        'last_mod_new': [common_time],
+        'strategy_old': ['MyImporter'],
+        'strategy_new': ['MyImporter'],
+        'strategy_version_old': [1.0],
+        'strategy_version_new': [2.0],
+        'extension_old': ['txt'],
+        'extension_new': ['txt'],
+        '_merge': pd.Series(
+            ['both'],
+            dtype=pd.api.types.CategoricalDtype(
+                categories=['left_only', 'right_only', 'both'], ordered=False)
+        )
+    }).set_index('fname')[diff_plan_expected_column_order]
+
+
+def test_diff_work_newer_strategy(mock_index):
+    """
+    Confirm diff_work_between_plans produces proper classifications on synthetic plans, in this case with an updated strategy version.
+    """
+    common_time = time.time()
+    old_index = mock_index(['newer_strategy.txt'], [common_time], [
+                           'txt'], ['MyImporter'], [1.0])
+    new_index = mock_index(['newer_strategy.txt'], [common_time], [
+                           'txt'], ['MyImporter'], [2.0])
+
+    diff_work = search.status.diff_work_between_plans(old_index, new_index)
+
+    assert_frame_equal(
+        diff_work['newer_strategy'],
+        expected_newer_strategy_df(common_time)
+    )
+
+    assert empty_diffplan(diff_work['new_files'])
+    assert empty_diffplan(diff_work['deleted_files'])
+    assert empty_diffplan(diff_work['updated_files'])
+    assert empty_diffplan(diff_work['diff_strategy'])
+    assert empty_diffplan(diff_work['unchanged'])

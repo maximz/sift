@@ -21,8 +21,8 @@ def diff_plan():
         'unchanged': test_status.expected_unchanged_file_df(common_time),
         'deleted_files': test_status.expected_removed_file_df(common_time),
         'updated_files': test_status.expected_updated_files_df(common_time),
-        'diff_strategy': test_status.expected_updated_files_df(common_time), # TODO
-        'newer_strategy': test_status.expected_updated_files_df(common_time), # TODO
+        'diff_strategy': test_status.expected_diff_strategy_df(common_time),
+        'newer_strategy': test_status.expected_newer_strategy_df(common_time),
         'new_files': test_status.expected_new_file_df(common_time),
     }
 
