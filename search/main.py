@@ -50,7 +50,14 @@ def update_index(args):
         update.update(index_loc, index_manager, work_plan, delete=args.delete_missing, verbose=True)
 
 def run_query(args):
-    print('query: %s' % ' '.join(args.terms))
+    query = ' '.join(args.terms)
+    print('query: %s' % query)
+    with lucene_manager.LuceneManager(args.path) as index_manager:
+        results = list(index_manager.search(query))
+        pretty_printed = [lucene_manager.format_document(r) for r in results]
+        print('\n'.join(pretty_printed))
+        return results
+
 
 if __name__ == '__main__':
     main()

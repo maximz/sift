@@ -75,7 +75,7 @@ class LuceneManager(object):
             self.reader = new_reader
             self.searcher = IndexSearcher(self.reader)
 
-    def process_search_result(self, result):
+    def _process_search_result(self, result):
         docid = result.doc  # this is not a stable identifier
         # obtain document through an IndexReader
         doc = self.searcher.doc(docid)
@@ -99,11 +99,11 @@ class LuceneManager(object):
         #parser.setDefaultOperator(QueryParser.Operator.AND) # defaults to OR unless terms have modifier
         query = MultiFieldQueryParser.parse(parser, terms) # https://stackoverflow.com/a/26853987/130164
         # execute search for top N hits
-        return [self.process_search_result(result) for result in self.searcher.search(query, n_hits).scoreDocs]
+        return [self._process_search_result(result) for result in self.searcher.search(query, n_hits).scoreDocs]
 
     def get_all_docs(self, n_hits=1000):
         # debug method
-        return [self.process_search_result(result) for result in self.searcher.search(MatchAllDocsQuery(), n_hits).scoreDocs]
+        return [self._process_search_result(result) for result in self.searcher.search(MatchAllDocsQuery(), n_hits).scoreDocs]
 
 
     def __exit__(self, type, value, traceback):
@@ -161,7 +161,8 @@ def format_document(document):
     return """
 Full path: {fullpath}
 Timestamp: {last_modified_time}
-""".format(fullpath=document['fullpath'], last_modified_time=document['last_modified_time'])
+Score: {score}
+""".format(fullpath=document['fullpath'], last_modified_time=document['last_modified_time'], score=document['score'])
 
 def assert_document_equals(document1, document2):
     assert document1['last_modified_time'] == document2['last_modified_time']
