@@ -15,7 +15,7 @@ def update(index_loc, index_manager, work_plan, delete=False, strategies=IMPORTE
             deleted_key = index_manager.delete(fname)
             if verbose:
                 print('Deleted: %s' % deleted_key)
-    if verbose:
+    if verbose and len(work_plan['deleted_files']) > 0:
         print('Missing objects removed from index.' if delete else 'Missing objects NOT removed from index.')
 
     for fname, extension, modified_time in extract_file_info(work_plan['new_files']):

@@ -17,4 +17,6 @@ WORKDIR /usr/src/app
 COPY . .
 RUN pip install -e .
 RUN pytest
+RUN mkdir /data
+WORKDIR /data
 CMD ["search"]

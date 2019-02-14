@@ -35,7 +35,10 @@ def init_index(args):
 
 def get_status(args):
     computed_status = status.status(args.path)
-    print(status.format_status(computed_status))
+    pretty_print_status = status.format_status(computed_status)
+    if pretty_print_status != '':
+        # be silent (not even a newline) unless we have status to report
+        print(pretty_print_status)
     return computed_status
 
 def update_index(args):
@@ -43,9 +46,8 @@ def update_index(args):
     work_plan = status.status(index_loc)
     formatted_status = status.format_status(work_plan)
     if formatted_status == '':
-        print('No changes.')
+        print('Nothing to update.')
         return
-    print(formatted_status)
     with lucene_manager.LuceneManager(index_loc) as index_manager:
         update.update(index_loc, index_manager, work_plan, delete=args.delete_missing, verbose=True)
 
