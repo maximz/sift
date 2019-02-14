@@ -1,8 +1,9 @@
 import pandas as pd
 import test_status
 import time
-from pytest import fixture
+from pytest import fixture, mark
 import search.update, search.metadata_manager
+import itertools
 
 @fixture
 def indexdir(tmpdir):
@@ -69,7 +70,8 @@ def test_strategy_run_calls(indexdir, mock_index_manager, mocker, diff_plan):
     assert_lists_equal(filepaths, keys_expected)
 
 
-def test_index_manager_calls_no_delete(indexdir, mock_index_manager, mocker, diff_plan):
+@mark.parametrize("delete", [False, True])
+def test_index_manager_calls_depending_on_delete(indexdir, mock_index_manager, mocker, diff_plan, delete):
     """
     Diff work synthetic classifications produce expected index manager calls on all diff'd files, except unchanged,
     and only on deleted if specified.
@@ -86,27 +88,31 @@ def test_index_manager_calls_no_delete(indexdir, mock_index_manager, mocker, dif
     # expect update() on these filenames
     update_expected = get_filenames(diff_plan, ['newer_strategy', 'diff_strategy', 'updated_files'])
 
+    # possibly expect delete() on these filenames
+    delete_expected = get_filenames(diff_plan, ['deleted_files'])
+
     # all other filenames -- no action expected
-    no_action_expected = get_filenames(diff_plan, ['unchanged', 'deleted_files'])
+    no_action_expected = get_filenames(diff_plan, ['unchanged'])
 
     # sanity check on construction of this test
-    assert_lists_have_no_shared_elements(insert_expected, update_expected)
-    assert_lists_have_no_shared_elements(insert_expected, no_action_expected)
-    assert_lists_have_no_shared_elements(update_expected, no_action_expected)
+    # confirm no elements shared between any combination of these lists
+    for a, b in itertools.combinations([insert_expected, update_expected, delete_expected, no_action_expected], 2):
+        assert_lists_have_no_shared_elements(a, b)
 
     # run
-    search.update.update(indexdir, mock_index_manager, diff_plan, delete=False, verbose=True)
+    search.update.update(indexdir, mock_index_manager, diff_plan, delete=delete, verbose=True)
 
-    print(mock_index_manager.insert.call_args_list)
     filepaths_insert = [extract_filename_from_index_call(c) for c in mock_index_manager.insert.call_args_list]
     assert_lists_equal(filepaths_insert, insert_expected)
 
     filepaths_update = [extract_filename_from_index_call(c) for c in mock_index_manager.update.call_args_list]
     assert_lists_equal(filepaths_update, update_expected)
 
-    mock_index_manager.delete.assert_not_called()
-
-# TODO: exact same with delete -- parametrize?
+    if delete:
+        filepaths_delete = [extract_filename_from_index_call(c) for c in mock_index_manager.delete.call_args_list]
+        assert_lists_equal(filepaths_delete, delete_expected)
+    else:
+        mock_index_manager.delete.assert_not_called()
 
 def test_summarize_new_index_status():
     """
