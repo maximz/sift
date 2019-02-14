@@ -17,7 +17,14 @@ def index_exists(index_loc, index_store_filename=DEFAULT_INDEX_STORE_FILENAME):
     return get_index_metadata_path(index_loc, index_store_filename).exists()
 
 def make_empty_index():
-    return pd.DataFrame(columns=['fname', 'last_mod', 'strategy', 'strategy_version']).set_index('fname')
+    """return empty frame with correct types"""
+    return pd.DataFrame({
+        'fname': pd.Series(dtype='str'),
+        'last_mod': pd.Series(dtype='float'),
+        'strategy': pd.Series(dtype='str'),
+        'strategy_version': pd.Series(dtype='float'),
+        'extension': pd.Series(dtype='str'),
+    }).set_index('fname')
 
 def create_index(index_loc, index_store_filename=DEFAULT_INDEX_STORE_FILENAME):
     assert not index_exists(

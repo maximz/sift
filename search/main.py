@@ -34,7 +34,9 @@ def init_index(args):
     print("Index created")
 
 def get_status(args):
-    print(status.format_status(status.status(args.path)))
+    computed_status = status.status(args.path)
+    print(status.format_status(computed_status))
+    return computed_status
 
 def update_index(args):
     index_loc = args.path

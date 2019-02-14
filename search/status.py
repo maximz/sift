@@ -44,14 +44,7 @@ def make_plan_from_scratch(index_loc, strategies):
     def make_plan_per_extension(extension, strategy):
         files = file_list(index_loc, extension)
         if len(files) == 0:
-            # return empty frame with correct types
-            return pd.DataFrame({
-                'fname': pd.Series(dtype='str'),
-                'last_mod': pd.Series(dtype='float'),
-                'strategy': pd.Series(dtype='str'),
-                'strategy_version': pd.Series(dtype='float'),
-                'extension': pd.Series(dtype='str'),
-            }).set_index('fname')
+            return metadata_manager.make_empty_index()
         df = pd.DataFrame.from_records(
             files,
             index='fname' # requires files to be non-empty
