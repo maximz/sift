@@ -6,6 +6,7 @@ import search.main, search.metadata_manager
 import argparse
 from pytest import fixture
 from pandas.testing import assert_frame_equal
+from pathlib import Path
 
 
 @fixture
@@ -62,3 +63,18 @@ def test_queries(prep_index, args, search_args):
 
     # only OR should work, expect 2 results
     assert len(search.main.run_query(search_args(['apple', 'apricot']))) == 2
+
+
+def test_repeated_index_new_files(prep_index, args, datadir):
+    """
+    init --> update --> add new file --> update; should not throw errors
+    """
+    # sanity check: confirm the index is as of yet empty
+    assert search.metadata_manager.last_index_details(args.path).shape[0] == 0
+
+    search.main.update_index(args)
+
+    # add new file
+    Path(str(datadir)).joinpath('test10.md').touch()
+
+    search.main.update_index(args)
