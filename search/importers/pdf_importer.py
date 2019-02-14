@@ -1,10 +1,8 @@
-from .importer import Importer, Document
+from .importer import Importer
 import subprocess
 
 class PdfImporter(Importer):
     version = 1.
     def run(self, full_path):
-        d = Document()
-        d.text = subprocess.run(
+        return subprocess.run(
             ['pdftotext', '-q', full_path, '-'], stdout=subprocess.PIPE, check=True, universal_newlines=True).stdout
-        return d

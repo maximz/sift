@@ -1,4 +1,4 @@
-from .importer import Importer, Document
+from .importer import Importer
 import pypandoc
 
 """
@@ -22,10 +22,8 @@ In future consider https://github.com/remarkjs/strip-markdown
 class PandocImporter(Importer):
     version = 1.
     def run(self, full_path):
-        d = Document()
-        d.text = pypandoc.convert_file(
+        return pypandoc.convert_file(
             full_path,
             'plain',
             extra_args=['--base-header-level=2'] # avoids level 1 headers becoming ALL CAPS
         )
-        return d

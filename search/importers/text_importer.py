@@ -1,7 +1,5 @@
-from .importer import Importer, Document
+from .importer import Importer
 class TextImporter(Importer):
     version = 1.
     def run(self, full_path):
-        d = Document()
-        d.text = self.read_file(full_path)
-        return d
+        return self.read_file(full_path)

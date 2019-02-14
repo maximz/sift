@@ -12,10 +12,6 @@ class Importer(object):
 
     def run(self, full_path):
         """
-        Returns a Document ready for indexing.
+        Returns file contents ready for indexing. Not yet a packaged Lucene document.
         """
         pass
-
-
-class Document(object):
-    pass

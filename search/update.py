@@ -1,6 +1,7 @@
 from . import metadata_manager
 import pandas as pd
 from .importers.registry import IMPORTER_REGISTRY
+from .lucene_manager import make_document
 
 def update(index_loc, index_manager, work_plan, delete=False, strategies=IMPORTER_REGISTRY, verbose=False):
     """
@@ -10,21 +11,26 @@ def update(index_loc, index_manager, work_plan, delete=False, strategies=IMPORTE
 
     # execute new_files, updated_files, new importer, updated importer, and maybe deletions
     if delete:
-        for fname, _ in extract_file_info(work_plan['deleted_files']):
+        for fname, _, __ in extract_file_info(work_plan['deleted_files']):
             deleted_key = index_manager.delete(fname)
             if verbose:
                 print('Deleted: %s' % deleted_key)
     if verbose:
         print('Missing objects removed from index.' if delete else 'Missing objects NOT removed from index.')
 
-    for fname, extension in extract_file_info(work_plan['new_files']):
-        inserted_key = index_manager.insert(perform_single_file(strategies, extension, fname))
+    for fname, extension, modified_time in extract_file_info(work_plan['new_files']):
+        inserted_key = index_manager.insert(
+            perform_single_file(strategies, extension, fname, modified_time)
+        )
         if verbose:
             print('Inserted: %s' % inserted_key)
 
     for df_key in ['updated_files', 'diff_strategy', 'newer_strategy']:
-        for fname, extension in extract_file_info(work_plan[df_key]):
-            updated_key = index_manager.update(fname, perform_single_file(strategies, extension, fname))
+        for fname, extension, modified_time in extract_file_info(work_plan[df_key]):
+            updated_key = index_manager.update(
+                fname,
+                perform_single_file(strategies, extension, fname, modified_time)
+            )
             if verbose:
                 print('Updated: %s' % updated_key)
 
@@ -38,16 +44,18 @@ def update(index_loc, index_manager, work_plan, delete=False, strategies=IMPORTE
 
 def extract_file_info(df):
     """
-    Convenience generator over file names and extensions from a work plan dataframe.
+    Convenience generator over file names, file extensions, and file modified times from a work plan dataframe.
     """
-    for fname, extension in df['extension_new'].iteritems(): # fname is index
-        yield (fname, extension)
+    for fname, row in df[['extension_new', 'last_mod_new']].iterrows():  # fname is index
+        yield (fname, row['extension_new'], row['last_mod_new'])
 
-def perform_single_file(strategies, extension, file_path):
+def perform_single_file(strategies, extension, file_path, modified_time):
     """
     Launches and executes an importer strategy. Then transforms into a lucene document.
     """
-    return strategies[extension]().run(file_path)
+    importer_strategy = strategies[extension]() # instantiate
+    contents = importer_strategy.run(file_path)
+    return make_document(file_path, modified_time, contents)
 
 def summarize_new_index_status(work_plan, delete):
     """

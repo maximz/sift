@@ -1,4 +1,4 @@
-from search.lucene_manager import LuceneManager, assert_document_equals, format_document
+from search.lucene_manager import LuceneManager, assert_document_equals, format_document, make_document
 from pytest import fixture
 import time
 
@@ -8,12 +8,12 @@ def manager(datadir):
         yield mgr
 
 @fixture
-def document(manager):
-    return manager.make_document('test/test2/test3.txt', 'test3.txt', time.time() - 10000, 'Sample contents of a document')
+def document():
+    return make_document('test/test2/test3.txt', time.time() - 10000, 'Sample contents of a document')
 
 @fixture
-def document_updated(manager):
-    return manager.make_document('test/test2/test3.txt', 'test3.txt', time.time() + 10000, 'This is completely different')
+def document_updated():
+    return make_document('test/test2/test3.txt', time.time() + 10000, 'This is completely different')
 
 @fixture(autouse=True) # will run automatically before each test
 def reset(manager):
@@ -49,7 +49,7 @@ def test_insert_query_by_filename(manager, document):
     manager.insert(document)
     manager.commit()
     assert manager.num_docs() == 1
-    results = list(manager.search(document['filename']))
+    results = list(manager.search(document['fullpath']))
     # print('\n'.join([format_document(d) for d in manager.get_all_docs()]))
     assert len(results) == 1
     assert_document_equals(results[0], document)

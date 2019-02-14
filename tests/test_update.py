@@ -79,7 +79,7 @@ def test_index_manager_calls_depending_on_delete(indexdir, mock_index_manager, m
     # mock file performer so we don't make real documents
     # instead return just the key so we can track where this key goes
     mocker.patch.object(search.update, 'perform_single_file')
-    search.update.perform_single_file.side_effect = lambda strategies, extension, file_path: file_path
+    search.update.perform_single_file.side_effect = lambda strategies, extension, file_path, modified_time: file_path
     # we also mocked lucene manager so we can measure -- mock_index_manager
 
     # we expect insert() on these filenames
@@ -117,8 +117,10 @@ def test_index_manager_calls_depending_on_delete(indexdir, mock_index_manager, m
 def test_summarize_new_index_status():
     """
     summarize_new_index_status handles synthetic diff plans and respects delete_missing.
+    TODO
     """
     pass
 
+# TODO:
 # test perform_single_file
 # test update with some real files

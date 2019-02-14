@@ -82,9 +82,8 @@ class LuceneManager(object):
         # doc.getFields() -> field.name(), field.stringValue()
         # TODO: highlighter to extract relevant part of body
         return {
-            'filename': doc['filename'],
             'fullpath': doc['fullpath'],
-            'date_stored': doc['date_stored'],
+            'last_modified_time': doc['last_modified_time'],
             'score': result.score
         }
 
@@ -96,7 +95,7 @@ class LuceneManager(object):
         # TODO: support date range queries
 
         # build query
-        parser = MultiFieldQueryParser(['fullpath', 'filename', 'body'], self.analyzer)
+        parser = MultiFieldQueryParser(['fullpath', 'body'], self.analyzer)
         #parser.setDefaultOperator(QueryParser.Operator.AND) # defaults to OR unless terms have modifier
         query = MultiFieldQueryParser.parse(parser, terms) # https://stackoverflow.com/a/26853987/130164
         # execute search for top N hits
@@ -115,25 +114,6 @@ class LuceneManager(object):
         self.writer.close()
         self.reader.close()
 
-    def make_document(self, full_path, filename, unix_timestamp, contents):
-        doc = Document()
-        # two separate date fields per recommendation
-        # at https://lucene.apache.org/core/7_6_0/core/org/apache/lucene/document/DateTools.html
-        doc.add(LongPoint('date_for_pointrangequery', int(unix_timestamp)))
-        doc.add(StoredField('date_stored', int(unix_timestamp)))
-        # https://lucene.apache.org/core/7_6_0/core/org/apache/lucene/document/TextField.html
-        # indexed and tokenized
-        doc.add(TextField('filename', filename, Field.Store.YES))
-        doc.add(TextField('fullpath', full_path, Field.Store.YES)) # this is file key but tokenized
-        doc.add(TextField('body', contents, Field.Store.NO))
-        # It is also possible to add fields that are indexed but not tokenized.
-        # See https://lucene.apache.org/core/7_6_0/core/org/apache/lucene/document/StringField.html
-        # However there is a limitation: https://stackoverflow.com/a/32654329/130164
-        # MultiFieldQueryParser will have bizarre results because the query parser runs the analyzer
-        # , while StringField does not run the analyzer.
-        # We deliberately store the key as untokenized so we can search by it directly with a TermQuery.
-        doc.add(StringField('key', full_path, Field.Store.YES)) # this is file key
-        return doc
 
     def debug_analyzer(self, text):
         """
@@ -152,17 +132,37 @@ class LuceneManager(object):
         token_stream.close()
         return tokens
 
+def make_document(full_path, unix_timestamp, contents):
+    """
+    Create Lucene document with specific content.
+    """
+    doc = Document()
+    # two separate date fields per recommendation
+    # at https://lucene.apache.org/core/7_6_0/core/org/apache/lucene/document/DateTools.html
+    doc.add(LongPoint('date_for_pointrangequery', int(unix_timestamp)))
+    doc.add(StoredField('last_modified_time', int(unix_timestamp)))
+    # https://lucene.apache.org/core/7_6_0/core/org/apache/lucene/document/TextField.html
+    # indexed and tokenized
+    doc.add(TextField('fullpath', full_path, Field.Store.YES)) # this is file key but tokenized
+    doc.add(TextField('body', contents, Field.Store.NO))
+    # It is also possible to add fields that are indexed but not tokenized.
+    # See https://lucene.apache.org/core/7_6_0/core/org/apache/lucene/document/StringField.html
+    # However there is a limitation: https://stackoverflow.com/a/32654329/130164
+    # MultiFieldQueryParser will have bizarre results because the query parser runs the analyzer
+    # , while StringField does not run the analyzer.
+    # We deliberately store the key as untokenized so we can search by it directly with a TermQuery.
+    doc.add(StringField('key', full_path, Field.Store.YES)) # this is file key
+    return doc
+
 def format_document(document):
     """
     pretty print
     """
     return """
 Full path: {fullpath}
-Filename: {filename}
-Timestamp: {date_stored}
-""".format(fullpath=document['fullpath'], filename=document['filename'], date_stored=document['date_stored'])
+Timestamp: {last_modified_time}
+""".format(fullpath=document['fullpath'], last_modified_time=document['last_modified_time'])
 
 def assert_document_equals(document1, document2):
-    assert document1['filename'] == document2['filename']
-    assert document1['date_stored'] == document2['date_stored']
+    assert document1['last_modified_time'] == document2['last_modified_time']
     assert document1['fullpath'] == document2['fullpath']
