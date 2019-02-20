@@ -10,15 +10,15 @@ jobs:
           docker_layer_caching: true
       # build and run tests
       - run:
-        name: build and run tests
-        command: |
-          docker build -t sift .
+          name: build and run tests
+          command: |
+            docker build -t sift .
       - deploy:
-        name: push docker image
-        command: |
-          if [ "$ {CIRCLE_BRANCH}" == "master" ]; then
-            TAG=0.$CIRCLE_BUILD_NUM
-            docker login -u $DOCKER_USER -p $DOCKER_PASS
-            docker tag sift "maximz/sift:${TAG}"
-            docker push "maximz/sift:${TAG}"
-          fi
+          name: push docker image
+          command: |
+            if [ "$ {CIRCLE_BRANCH}" == "master" ]; then
+              TAG=0.$CIRCLE_BUILD_NUM
+              docker login -u $DOCKER_USER -p $DOCKER_PASS
+              docker tag sift "maximz/sift:${TAG}"
+              docker push "maximz/sift:${TAG}"
+            fi
