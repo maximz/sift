@@ -1,4 +1,4 @@
-from search.lucene_manager import LuceneManager, assert_document_equals, format_document, make_document
+from sift.lucene_manager import LuceneManager, assert_document_equals, format_document, make_document
 from pytest import fixture
 import time
 

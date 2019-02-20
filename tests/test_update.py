@@ -2,18 +2,18 @@ import pandas as pd
 import test_status
 import time
 from pytest import fixture, mark
-import search.update, search.metadata_manager
+import sift.update, sift.metadata_manager
 import itertools
 
 @fixture
 def indexdir(tmpdir):
-    search.metadata_manager.create_index(str(tmpdir))
+    sift.metadata_manager.create_index(str(tmpdir))
     return str(tmpdir)
 
 @fixture
 def mock_index_manager(mocker):
     # mock out lucene manager so we don't run on empty documents
-    return mocker.patch('search.lucene_manager.LuceneManager',  autospec=True)
+    return mocker.patch('sift.lucene_manager.LuceneManager',  autospec=True)
 
 @fixture
 def diff_plan():
@@ -53,7 +53,7 @@ def test_strategy_run_calls(indexdir, mock_index_manager, mocker, diff_plan):
     """
     Diff work synthetic classifications produce expected strategy run calls on all diff'd files, except unchanged and deleted.
     """
-    mocker.patch.object(search.update, 'perform_single_file')
+    mocker.patch.object(sift.update, 'perform_single_file')
 
     # we expect strategy run() on these filenames
     keys_expected = get_filenames(diff_plan, ['new_files', 'newer_strategy', 'diff_strategy', 'updated_files'])
@@ -65,8 +65,8 @@ def test_strategy_run_calls(indexdir, mock_index_manager, mocker, diff_plan):
     for k in keys_incorrect:
         assert k not in keys_expected
 
-    search.update.update(indexdir, mock_index_manager, diff_plan)
-    filepaths = [extract_filename_from_perform_single_file_call(c) for c in search.update.perform_single_file.call_args_list]
+    sift.update.update(indexdir, mock_index_manager, diff_plan)
+    filepaths = [extract_filename_from_perform_single_file_call(c) for c in sift.update.perform_single_file.call_args_list]
     assert_lists_equal(filepaths, keys_expected)
 
 
@@ -78,8 +78,8 @@ def test_index_manager_calls_depending_on_delete(indexdir, mock_index_manager, m
     """
     # mock file performer so we don't make real documents
     # instead return just the key so we can track where this key goes
-    mocker.patch.object(search.update, 'perform_single_file')
-    search.update.perform_single_file.side_effect = lambda strategies, extension, file_path, modified_time: file_path
+    mocker.patch.object(sift.update, 'perform_single_file')
+    sift.update.perform_single_file.side_effect = lambda strategies, extension, file_path, modified_time: file_path
     # we also mocked lucene manager so we can measure -- mock_index_manager
 
     # we expect insert() on these filenames
@@ -100,7 +100,7 @@ def test_index_manager_calls_depending_on_delete(indexdir, mock_index_manager, m
         assert_lists_have_no_shared_elements(a, b)
 
     # run
-    search.update.update(indexdir, mock_index_manager, diff_plan, delete=delete, verbose=True)
+    sift.update.update(indexdir, mock_index_manager, diff_plan, delete=delete, verbose=True)
 
     filepaths_insert = [extract_filename_from_index_call(c) for c in mock_index_manager.insert.call_args_list]
     assert_lists_equal(filepaths_insert, insert_expected)

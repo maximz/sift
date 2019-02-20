@@ -2,7 +2,7 @@
 using high-level interfaces from main.py
 """
 
-import search.main, search.metadata_manager
+import sift.main, sift.metadata_manager
 import argparse
 from pytest import fixture
 from pandas.testing import assert_frame_equal
@@ -21,7 +21,7 @@ def search_args(datadir):
 
 @fixture
 def prep_index(args):
-    search.main.init_index(args)
+    sift.main.init_index(args)
 
 @fixture(autouse=True)  # will run automatically before each test
 def reset(prep_index):
@@ -33,15 +33,15 @@ def test_repeated_reindex(prep_index, args):
     init --> status --> update --> status --> update --> status
     2nd and 3rd status should match
     """
-    status_orig = search.main.get_status(args)
+    status_orig = sift.main.get_status(args)
 
     # sanity check: confirm the index is as of yet empty
-    assert search.metadata_manager.last_index_details(args.path).shape[0] == 0
+    assert sift.metadata_manager.last_index_details(args.path).shape[0] == 0
 
-    search.main.update_index(args)
-    status_one = search.main.get_status(args)
-    search.main.update_index(args)
-    status_two = search.main.get_status(args)
+    sift.main.update_index(args)
+    status_one = sift.main.get_status(args)
+    sift.main.update_index(args)
+    status_two = sift.main.get_status(args)
     # status objects are dicts holding dataframes
     for key in status_one.keys():
         assert_frame_equal(status_one[key], status_two[key])
@@ -50,19 +50,19 @@ def test_queries(prep_index, args, search_args):
     """
     init --> status --> update --> query for expected terms
     """
-    search.main.get_status(args)
-    search.main.update_index(args)
+    sift.main.get_status(args)
+    sift.main.update_index(args)
     # expect 1 result
-    assert len(search.main.run_query(search_args(['apple']))) == 1
+    assert len(sift.main.run_query(search_args(['apple']))) == 1
 
     # OR or AND should work, expect 1 result
-    assert len(search.main.run_query(search_args(['apple', 'banana']))) == 1
+    assert len(sift.main.run_query(search_args(['apple', 'banana']))) == 1
 
     # only OR should work, expect 1 result
-    assert len(search.main.run_query(search_args(['apple', 'blackberry']))) == 1
+    assert len(sift.main.run_query(search_args(['apple', 'blackberry']))) == 1
 
     # only OR should work, expect 2 results
-    assert len(search.main.run_query(search_args(['apple', 'apricot']))) == 2
+    assert len(sift.main.run_query(search_args(['apple', 'apricot']))) == 2
 
 
 def test_repeated_index_new_files(prep_index, args, datadir):
@@ -70,11 +70,11 @@ def test_repeated_index_new_files(prep_index, args, datadir):
     init --> update --> add new file --> update; should not throw errors
     """
     # sanity check: confirm the index is as of yet empty
-    assert search.metadata_manager.last_index_details(args.path).shape[0] == 0
+    assert sift.metadata_manager.last_index_details(args.path).shape[0] == 0
 
-    search.main.update_index(args)
+    sift.main.update_index(args)
 
     # add new file
     Path(str(datadir)).joinpath('test10.md').touch()
 
-    search.main.update_index(args)
+    sift.main.update_index(args)

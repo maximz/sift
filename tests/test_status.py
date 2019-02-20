@@ -1,4 +1,4 @@
-import search.status
+import sift.status
 import time
 import pytest
 import pandas as pd
@@ -8,7 +8,7 @@ from pandas.testing import assert_frame_equal
 @pytest.fixture
 def mock_importer(mocker):
     def _mock_importer(name, version):
-        mock = mocker.MagicMock(spec=search.importers.importer.Importer)
+        mock = mocker.MagicMock(spec=sift.importers.importer.Importer)
         mock.__name__ = name
         mock.version = version
         return mock
@@ -47,9 +47,9 @@ def test_make_plan_from_scratch(mocker, filetype_strategies, mock_index):
     """
     Confirm make_plan_from_scratch returns whitelisted extensions only with appropriate importer metadata.
     """
-    mocker.patch.object(search.status, 'file_list')
+    mocker.patch.object(sift.status, 'file_list')
     common_time = time.time()
-    search.status.file_list.side_effect = [
+    sift.status.file_list.side_effect = [
         # return value for first execution
         [
             {
@@ -68,7 +68,7 @@ def test_make_plan_from_scratch(mocker, filetype_strategies, mock_index):
         [],
     ]
     assert_frame_equal(
-        search.status.make_plan_from_scratch('.', filetype_strategies),
+        sift.status.make_plan_from_scratch('.', filetype_strategies),
         mock_index(
             names=['test.txt', 'test.md'],
             times=[common_time, common_time],
@@ -82,10 +82,10 @@ def test_make_plan_from_scratch_empty_directory_dtypes(mocker, filetype_strategi
     """
     Confirm make_plan_from_scratch returns the right dtypes when there are no files.
     """
-    mocker.patch.object(search.status, 'file_list')
-    search.status.file_list.return_value = []
+    mocker.patch.object(sift.status, 'file_list')
+    sift.status.file_list.return_value = []
     assert_frame_equal(
-        search.status.make_plan_from_scratch('.', filetype_strategies),
+        sift.status.make_plan_from_scratch('.', filetype_strategies),
         mock_index([], [], []) # correct dtypes specified here
     )
 
@@ -130,7 +130,7 @@ def test_diff_work_new_files(mock_index):
     old_index = mock_index([], [], [])
     new_index = mock_index(['new_file.txt'], [common_time], ['txt'])
 
-    diff_work = search.status.diff_work_between_plans(old_index, new_index)
+    diff_work = sift.status.diff_work_between_plans(old_index, new_index)
     print(diff_work['new_files'])
 
     assert_frame_equal(
@@ -172,7 +172,7 @@ def test_diff_work_unchanged_file(mock_index):
     common_time = time.time()
     index = mock_index(['unchanged_file.txt'], [common_time], ['txt'])
 
-    diff_work = search.status.diff_work_between_plans(index, index)
+    diff_work = sift.status.diff_work_between_plans(index, index)
 
     assert empty_diffplan(diff_work['new_files'])
     assert empty_diffplan(diff_work['deleted_files'])
@@ -197,7 +197,7 @@ def test_diff_work_new_and_unchanged_files(mock_index):
     old_index = mock_index(['unchanged_file.txt'], [common_time], ['txt'])
     new_index = mock_index(['unchanged_file.txt', 'new_file.txt'], [common_time, common_time], ['txt', 'txt'])
 
-    diff_work = search.status.diff_work_between_plans(old_index, new_index)
+    diff_work = sift.status.diff_work_between_plans(old_index, new_index)
 
     assert_frame_equal(
         diff_work['new_files'],
@@ -274,7 +274,7 @@ def test_diff_work_removed_only_file(mock_index):
     old_index = mock_index(['deleted_file.txt'], [common_time], ['txt'])
     new_index = mock_index([], [], [])
 
-    diff_work = search.status.diff_work_between_plans(old_index, new_index)
+    diff_work = sift.status.diff_work_between_plans(old_index, new_index)
 
     assert_frame_equal(
         diff_work['deleted_files'],
@@ -299,7 +299,7 @@ def test_diff_work_removed_and_unchanged_files(mock_index):
                            common_time, common_time], ['txt', 'txt'])
     new_index = mock_index(['permanent_file.txt'], [common_time], ['txt'])
 
-    diff_work = search.status.diff_work_between_plans(old_index, new_index)
+    diff_work = sift.status.diff_work_between_plans(old_index, new_index)
 
     assert_frame_equal(
         diff_work['deleted_files'],
@@ -374,7 +374,7 @@ def test_diff_work_updated_files(mock_index):
     old_index = mock_index(['updated_file.txt'], [common_time - 1000], ['txt'])
     new_index = mock_index(['updated_file.txt'], [common_time], ['txt'])
 
-    diff_work = search.status.diff_work_between_plans(old_index, new_index)
+    diff_work = sift.status.diff_work_between_plans(old_index, new_index)
 
     assert_frame_equal(
         diff_work['updated_files'],
@@ -419,7 +419,7 @@ def test_diff_work_diff_strategy(mock_index):
     new_index = mock_index(['diff_strategy.txt'], [common_time], [
                            'txt'], ['SpecializedImporter'], [3.0])
 
-    diff_work = search.status.diff_work_between_plans(old_index, new_index)
+    diff_work = sift.status.diff_work_between_plans(old_index, new_index)
 
     assert_frame_equal(
         diff_work['diff_strategy'],
@@ -463,7 +463,7 @@ def test_diff_work_newer_strategy(mock_index):
     new_index = mock_index(['newer_strategy.txt'], [common_time], [
                            'txt'], ['MyImporter'], [2.0])
 
-    diff_work = search.status.diff_work_between_plans(old_index, new_index)
+    diff_work = sift.status.diff_work_between_plans(old_index, new_index)
 
     assert_frame_equal(
         diff_work['newer_strategy'],

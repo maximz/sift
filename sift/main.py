@@ -2,7 +2,7 @@ import argparse
 from . import status, metadata_manager, update, lucene_manager
 
 def main():
-    parser = argparse.ArgumentParser(prog='searchtool', description="Index a file tree and search it.")
+    parser = argparse.ArgumentParser(prog='sift', description="Index a file tree and search it.")
     parser.add_argument('--path', help='Index path', default='.')
 
     subparsers = parser.add_subparsers()
