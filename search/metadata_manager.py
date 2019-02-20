@@ -8,7 +8,7 @@ But for now convenient to just use pandas for some diffing operations.
 import pandas as pd
 from pathlib import Path
 
-DEFAULT_INDEX_STORE_FILENAME = '.searchindex.csv'
+DEFAULT_INDEX_STORE_FILENAME = '.siftindex/metadata.csv'
 
 def get_index_metadata_path(index_loc, index_store_filename):
     return Path(index_loc).joinpath(index_store_filename)
@@ -29,6 +29,9 @@ def make_empty_index():
 def create_index(index_loc, index_store_filename=DEFAULT_INDEX_STORE_FILENAME):
     assert not index_exists(
         index_loc, index_store_filename), 'Index already exists.'
+    parent_dir = get_index_metadata_path(index_loc, index_store_filename).parent
+    if not parent_dir.exists():
+        parent_dir.mkdir()
     save_index_details(make_empty_index(), index_loc, index_store_filename)
 
 def last_index_details(index_loc, index_store_filename=DEFAULT_INDEX_STORE_FILENAME):

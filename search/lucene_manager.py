@@ -9,11 +9,12 @@ from org.apache.lucene.store import SimpleFSDirectory
 from org.apache.lucene.search import IndexSearcher, TermQuery, BooleanQuery, BooleanClause, MatchAllDocsQuery
 from org.apache.lucene.queryparser.classic import QueryParser, MultiFieldQueryParser
 from org.apache.lucene.analysis.tokenattributes import CharTermAttribute
+from org.apache.lucene.search.highlight import SimpleHTMLFormatter, QueryScorer, Highlighter
 from pathlib import Path
 
 class LuceneManager(object):
 
-    def __init__(self, index_root_loc, index_subdir_name='.searchindex'):
+    def __init__(self, index_root_loc, index_subdir_name='.siftindex/index'):
         self.index_root_loc = index_root_loc
         self.index_subdir_name = index_subdir_name
 
@@ -23,10 +24,9 @@ class LuceneManager(object):
         """
         if lucene.getVMEnv() is None:
             lucene.initVM(vmargs=['-Djava.awt.headless=true'])
-        index_path = str(Path(self.index_root_loc).joinpath('%s/' % self.index_subdir_name))
-        if not os.path.exists(index_path):
-            os.mkdir(index_path)
-        store = SimpleFSDirectory(Paths.get(index_path))
+        index_path = Path(self.index_root_loc).joinpath('%s/' % self.index_subdir_name)
+        index_path.mkdir(parents=True, exist_ok=True)
+        store = SimpleFSDirectory(Paths.get(str(index_path)))
         self.analyzer = StandardAnalyzer()
         config = IndexWriterConfig(self.analyzer)
         config.setOpenMode(IndexWriterConfig.OpenMode.CREATE_OR_APPEND)
@@ -75,20 +75,28 @@ class LuceneManager(object):
             self.reader = new_reader
             self.searcher = IndexSearcher(self.reader)
 
-    def _process_search_result(self, result):
+    def _process_search_result(self, result, highlighter=None):
         docid = result.doc  # this is not a stable identifier
         # obtain document through an IndexReader
         doc = self.searcher.doc(docid)
         # doc.getFields() -> field.name(), field.stringValue()
-        # TODO: highlighter to extract relevant part of body
+        # use highlighter to extract relevant part of body
+        highlighted_text = ''
+        if highlighter:
+            contents = doc['body']
+            token_stream = self.analyzer.tokenStream('body', contents)
+            n_fragments = 3
+            fragment_separator = '...'
+            highlighted_text = highlighter.getBestFragments(token_stream, contents, n_fragments, fragment_separator)
         return {
             'fullpath': doc['fullpath'],
             'last_modified_time': doc['last_modified_time'],
-            'score': result.score
+            'score': result.score,
+            'excerpt': highlighted_text
         }
 
 
-    def search(self, terms, n_hits=50):
+    def search(self, terms, n_hits=5):
         """
         Run search query.
         """
@@ -98,8 +106,10 @@ class LuceneManager(object):
         parser = MultiFieldQueryParser(['fullpath', 'body'], self.analyzer)
         #parser.setDefaultOperator(QueryParser.Operator.AND) # defaults to OR unless terms have modifier
         query = MultiFieldQueryParser.parse(parser, terms) # https://stackoverflow.com/a/26853987/130164
+        # create a highlighter
+        highlighter = Highlighter(SimpleHTMLFormatter('*', '*'), QueryScorer(query))
         # execute search for top N hits
-        return [self._process_search_result(result) for result in self.searcher.search(query, n_hits).scoreDocs]
+        return [self._process_search_result(result, highlighter) for result in self.searcher.search(query, n_hits).scoreDocs]
 
     def get_all_docs(self, n_hits=1000):
         # debug method
@@ -144,7 +154,7 @@ def make_document(full_path, unix_timestamp, contents):
     # https://lucene.apache.org/core/7_6_0/core/org/apache/lucene/document/TextField.html
     # indexed and tokenized
     doc.add(TextField('fullpath', full_path, Field.Store.YES)) # this is file key but tokenized
-    doc.add(TextField('body', contents, Field.Store.NO))
+    doc.add(TextField('body', contents, Field.Store.YES))
     # It is also possible to add fields that are indexed but not tokenized.
     # See https://lucene.apache.org/core/7_6_0/core/org/apache/lucene/document/StringField.html
     # However there is a limitation: https://stackoverflow.com/a/32654329/130164
@@ -154,7 +164,7 @@ def make_document(full_path, unix_timestamp, contents):
     doc.add(StringField('key', full_path, Field.Store.YES)) # this is file key
     return doc
 
-def format_document(document):
+def format_document(document_result):
     """
     pretty print
     """
@@ -162,7 +172,8 @@ def format_document(document):
 Full path: {fullpath}
 Timestamp: {last_modified_time}
 Score: {score}
-""".format(fullpath=document['fullpath'], last_modified_time=document['last_modified_time'], score=document['score'])
+Excerpt: {excerpt}
+""".format(fullpath=document_result['fullpath'], last_modified_time=document_result['last_modified_time'], score=document_result['score'], excerpt=document_result['excerpt'])
 
 def assert_document_equals(document1, document2):
     assert document1['last_modified_time'] == document2['last_modified_time']

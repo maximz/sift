@@ -96,8 +96,8 @@ def test_analyzer(manager):
     """
     Declare expected behavior of the Lucene tokenization process.
     """
-    tokens = manager.debug_analyzer('file/path/test5.txt')
-    assert tokens == ['file', 'path', 'test5', 'txt'], tokens
+    tokens = manager.debug_analyzer('file/path/test/test5.txt')
+    assert tokens == ['file', 'path', 'test', 'test5', 'txt'], tokens
 
     tokens = manager.debug_analyzer('test_File-More1.tar.gz')
     assert tokens == ['test_file', 'more1', 'tar.gz'], tokens
