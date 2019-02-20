@@ -1,5 +1,7 @@
 # `sift`: a git-inspired personal search utility
 
+[![CircleCI](https://circleci.com/gh/maximz/sift/tree/master.svg?style=shield)](https://circleci.com/gh/maximz/sift/tree/master)
+
 **Use cases:**
 
 * I have a large collection of markdown notes and grep is just not cutting it anymore for search.
