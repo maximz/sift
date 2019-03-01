@@ -53,11 +53,11 @@ def update_index(args):
 
 def run_query(args):
     query = ' '.join(args.terms)
-    print('query: %s' % query)
+    print('Results for: %s' % query)
     with lucene_manager.LuceneManager(args.path) as index_manager:
         results = list(index_manager.search(query))
         pretty_printed = [lucene_manager.format_document(r) for r in results]
-        print('\n'.join(pretty_printed))
+        print('\n\n'.join(pretty_printed))
         return results
 
 

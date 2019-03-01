@@ -13,4 +13,8 @@ IMPORTER_REGISTRY = {
     'pdf': PdfImporter,
     'doc': PandocImporter,
     'docx': PandocImporter,
+    'tex': PandocImporter,
+    'latex': PandocImporter,
+    'html': PandocImporter,
+    'epub': PandocImporter,
 }
