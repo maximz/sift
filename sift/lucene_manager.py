@@ -11,6 +11,7 @@ from org.apache.lucene.queryparser.classic import QueryParser, MultiFieldQueryPa
 from org.apache.lucene.analysis.tokenattributes import CharTermAttribute
 from org.apache.lucene.search.highlight import SimpleHTMLFormatter, QueryScorer, Highlighter
 from pathlib import Path
+from datetime import datetime, timezone
 
 class LuceneManager(object):
 
@@ -168,12 +169,21 @@ def format_document(document_result):
     """
     pretty print
     """
-    return """
-Full path: {fullpath}
-Timestamp: {last_modified_time}
-Score: {score}
-Excerpt: {excerpt}
-""".format(fullpath=document_result['fullpath'], last_modified_time=document_result['last_modified_time'], score=document_result['score'], excerpt=document_result['excerpt'])
+    def pprint_unix_timestamp(ts):
+        """
+        returns e.g. 2019-02-28 22:17:55 EST
+        ref: https://stackoverflow.com/a/40769643/130164
+        """
+        utc_time = datetime.fromtimestamp(int(ts), timezone.utc)
+        local_time = utc_time.astimezone()
+        return local_time.strftime("%Y-%m-%d %H:%M:%S %Z")
+
+    return '=== {fullpath} ({last_modified_time}) ===\n{excerpt}'.format(
+        fullpath=document_result['fullpath'],
+        last_modified_time=pprint_unix_timestamp(document_result['last_modified_time']),
+        # score=document_result['score'],
+        excerpt=document_result['excerpt']
+    )
 
 def assert_document_equals(document1, document2):
     assert document1['last_modified_time'] == document2['last_modified_time']
