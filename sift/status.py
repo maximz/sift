@@ -2,32 +2,36 @@ import pandas as pd
 from . import metadata_manager
 from pathlib import Path
 from .importers.registry import IMPORTER_REGISTRY
+from functional import seq
 
 """
 These methods are responsible for checking status of current index and formulating work plan to update current index with changed files.
 """
 
-def file_list(base_path, extension):
+# Default ignored file path components
+IGNORE_PATHS = ['.siftindex']
+
+def file_list(base_path, extension, ignore_paths=IGNORE_PATHS):
     """
     Get file attributes on paths matching this extension that are confirmed to be files.
     Returns list of { fname: "filename", last_mod: "last modified time as unix timestamp" } dictionaries
     """
     all_files_with_extension = Path(base_path).glob('**/*.%s' % extension)
+
     confirm_is_file = lambda path: path.is_file()
+    no_ignore = lambda path: not any([part in ignore_paths for part in path.parts])
     def get_file_attributes(path):
         return {
             'fname': str(path),
             'last_mod': path.stat().st_mtime  # unix timestamp
         }
 
-    # full list all_files_with_extension --> filter by confirm_is_file --> apply map get_file_attributes
-    return list(map(
-        get_file_attributes,
-        filter(
-            confirm_is_file,
-            all_files_with_extension
-        )
-    ))
+    return (seq(all_files_with_extension)
+        .filter(confirm_is_file) # confirm it's a file
+        .filter(no_ignore) # confirm not in an ignored file path
+        .map(get_file_attributes) # transform into file attributes dict
+        .to_list()
+    )
 
 def make_plan_from_scratch(index_loc, strategies):
     """
