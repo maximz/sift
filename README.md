@@ -228,6 +228,10 @@ Pandoc can convert between numerous... output. The _URL_ is
 
 ```
 
+# Alternative tools
+
+* [rga](https://github.com/phiresky/ripgrep-all), an extension of ripgrep that searches many file types
+
 # Develop
 
 Close the repo, then run `docker build -t sift .` to build and run tests.
